@@ -6,9 +6,12 @@ import json
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY is not set in environment variables.")
 genai.configure(api_key=GEMINI_API_KEY)
 
 
@@ -17,6 +20,7 @@ def extract_visible_text_requests(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, timeout=10, headers=headers)
+        response.raise_for_status()  # Raise for HTTP errors
         soup = BeautifulSoup(response.text, "html.parser")
         for script in soup(["script", "style"]):
             script.decompose()
@@ -28,40 +32,45 @@ def extract_visible_text_requests(url):
 
 def extract_visible_text_playwright(url):
     """Fetch page content using Playwright (renders JS, bypasses Cloudflare)."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
-            java_script_enabled=True,
-            viewport={"width": 1280, "height": 720},
-        )
-        page = context.new_page()
-
-        try:
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/115.0 Safari/537.36",
+                java_script_enabled=True,
+                viewport={"width": 1280, "height": 720},
+            )
+            page = context.new_page()
             page.goto(url, wait_until="load", timeout=60000)
             print(f"Page loaded for {url}, waiting for JS rendering...")
             page.wait_for_timeout(15000)  # wait 15 seconds for JS/Cloudflare
             html = page.content()
-        except PlaywrightTimeoutError:
-            print(f"⚠️ Timeout reached loading {url} with Playwright, using partial content")
-            html = page.content()
-        finally:
             browser.close()
-
-    soup = BeautifulSoup(html, "html.parser")
-    for script in soup(["script", "style"]):
-        script.decompose()
-    text = " ".join(soup.stripped_strings)
-    return text[:6000]
+        soup = BeautifulSoup(html, "html.parser")
+        for script in soup(["script", "style"]):
+            script.decompose()
+        text = " ".join(soup.stripped_strings)
+        return text[:6000]
+    except PlaywrightTimeoutError:
+        print(f"⚠️ Timeout loading {url} with Playwright, trying to get partial content.")
+        return ""
+    except Exception as e:
+        print(f"⚠️ Error fetching page with Playwright: {e}")
+        return ""
 
 
 def extract_visible_text(url):
-    """Decide which extraction method to use based on URL."""
-    # Customize this check as needed:
-    if "openai.com" in url.lower():
-        return extract_visible_text_playwright(url)
-    else:
-        return extract_visible_text_requests(url)
+    """Choose extraction method based on URL or content type."""
+    # Example: Use Playwright for sites that rely heavily on JS/Cloudflare
+    js_heavy_sites = ["openai.com", "example-js-site.com"]  # extend list as needed
+    if any(site in url.lower() for site in js_heavy_sites):
+        text = extract_visible_text_playwright(url)
+        if text:
+            return text
+        # fallback to requests if playwright fails
+        print("Fallback to requests extraction...")
+    return extract_visible_text_requests(url)
 
 
 def extract_json_from_text(text):
@@ -71,7 +80,7 @@ def extract_json_from_text(text):
         try:
             return json.loads(json_match.group())
         except json.JSONDecodeError:
-            return None
+            pass
     return None
 
 
@@ -105,9 +114,7 @@ Output JSON exactly like this example:
         try:
             data = json.loads(result)
         except json.JSONDecodeError:
-            # Try fallback extraction
             data = extract_json_from_text(result)
-
             if not data:
                 print("⚠️ Failed to parse JSON from model response, falling back to N/A")
                 return "N/A", "N/A", "N/A"
@@ -121,6 +128,3 @@ Output JSON exactly like this example:
     except Exception as e:
         print(f"⚠️ Gemini API error: {e}")
         return "N/A", "N/A", "N/A"
-
-
-

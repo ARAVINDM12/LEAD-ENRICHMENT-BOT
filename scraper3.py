@@ -3,6 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 from googlesearch import search
 import re
+import time
+import logging
+from urllib.parse import urlparse
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def clean_text(text):
     """Clean extracted text by removing citations, references, and extra whitespace."""
@@ -20,9 +25,38 @@ def fix_url(url):
         url = 'https:' + url
     elif url.startswith('/'):
         url = 'https://en.wikipedia.org' + url
-    if not url.startswith('http'):
+    parsed = urlparse(url)
+    if not parsed.scheme:
         url = 'https://' + url
     return url
+
+def fetch_url_with_retries(url, retries=3, backoff=2):
+    """Fetch URL content with retries and exponential backoff."""
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as e:
+            if attempt < retries - 1:
+                sleep_time = backoff ** attempt
+                logging.warning(f"Request failed ({e}), retrying in {sleep_time}s...")
+                time.sleep(sleep_time)
+            else:
+                logging.error(f"Request failed after {retries} attempts: {e}")
+                raise e
+
+def google_search_website(company_name):
+    """Search Google for the company's official website."""
+    try:
+        query = f"{company_name} official website"
+        for url in search(query, num_results=5):
+            if company_name.lower() in url.lower():
+                logging.info(f"Google Search found website: {url}")
+                return url
+    except Exception as e:
+        logging.warning(f"Google Search failed for {company_name}: {e}")
+    return 'N/A'
 
 def get_company_details(company_name):
     info = {
@@ -40,20 +74,13 @@ def get_company_details(company_name):
     page = wiki.page(company_name)
 
     if not page.exists():
-        print(f"🔎 Wikipedia page not found for {company_name}, trying Google Search fallback")
-        try:
-            query = f"{company_name} official website"
-            for url in search(query, num_results=5):
-                if company_name.lower() in url.lower():
-                    info['Website'] = url
-                    break
-        except Exception as e:
-            print(f"⚠️ Google Search failed for {company_name}: {e}")
+        logging.info(f"Wikipedia page not found for {company_name}, trying Google Search fallback")
+        info['Website'] = google_search_website(company_name)
         return info
 
     url = page.fullurl
     try:
-        html = requests.get(url, timeout=10).text
+        html = fetch_url_with_retries(url)
         soup = BeautifulSoup(html, 'html.parser')
         infobox = soup.find('table', {'class': 'infobox'})
         if infobox:
@@ -80,9 +107,9 @@ def get_company_details(company_name):
                     else:
                         info['Website'] = val
     except Exception as e:
-        print(f"⚠️ Error parsing infobox for {company_name}: {e}")
+        logging.warning(f"Error parsing infobox for {company_name}: {e}")
 
-    # Fallback to parse raw Wikipedia text if still missing fields
+    # Fallback to parse raw Wikipedia text if still missing fields (optional, can be omitted)
     for field in ['Website', 'Industry', 'Company Size', 'HQ Location']:
         if info[field] == 'N/A':
             content = page.text.lower()
@@ -99,16 +126,9 @@ def get_company_details(company_name):
                 elif field == 'HQ Location' and ('headquarter' in line or 'headquarters' in line) and info['HQ Location'] == 'N/A':
                     info['HQ Location'] = clean_text(line)
 
-    # Final sanity check for website: if still 'N/A', try Google search
+    # Final sanity check for website: if still 'N/A', try Google search once
     if info['Website'] == 'N/A':
-        try:
-            print(f"🔎 Using Google Search fallback for {company_name} to find website")
-            query = f"{company_name} official website"
-            for url in search(query, num_results=5):
-                if company_name.lower() in url.lower():
-                    info['Website'] = url
-                    break
-        except Exception as e:
-            print(f"⚠️ Google Search failed for {company_name}: {e}")
+        logging.info(f"Using Google Search fallback for {company_name} to find website")
+        info['Website'] = google_search_website(company_name)
 
     return info
