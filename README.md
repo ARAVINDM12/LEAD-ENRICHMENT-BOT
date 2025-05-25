@@ -9,8 +9,8 @@ AI-powered automation tool that takes a list of company names and enriches it wi
 
 📸 DemO
 
-      link : https://drive.google.com/file/d/1ycxHSgyC2T_12KaC5MqGBDPHYxA6rh5U/view?usp=sharing
-      You can also find a local copy under assets/demo.webm
+      link : https://drive.google.com/file/d/1iTmUjiGA0EQOkXe04dCBxKCcJn3JQHS6/view?usp=sharing
+      You can also find a local copy at demo.webm
 
 📦 Features
 
@@ -26,6 +26,7 @@ AI-powered automation tool that takes a list of company names and enriches it wi
       Streamlit
       Pandas
       Playwright
+      Scrapingbee
       Google Generative AI (google-generativeai)
       Wikipedia API
       BeautifulSoup
@@ -40,9 +41,10 @@ AI-powered automation tool that takes a list of company names and enriches it wi
       ├── scraper3.py # Company info scraper
       ├── llm3.py # LLM (Gemini) prompt + parser
       ├── sample_input.csv # Example input file
-      ├── enriched_output2.csv # Example output file
+      ├── sample_output(csv).csv # Example output file
+      ├── sample_output(xlxx).xlxx # Example output file
       ├── requirements.txt # All dependencies
-      ├── .env.example # Template for API keys
+      ├── .env # for API keys
       ├── README.md # You're here!
       └── demo_video.mp4 #demo video
 
@@ -61,10 +63,13 @@ AI-powered automation tool that takes a list of company names and enriches it wi
 ✅ How to Use
 
       🌐 Web UI (Streamlit)
+            use this link : https://lead-enrichment-bot-am12.streamlit.app/
+      🌐 Via CLI (Streamlit)
             streamlit run app.py
             Upload a CSV with a column named company_name
             Click Run Enrichment
             Download enriched CSV
+            
       📄 CSV Format
       ✅ sample_input.csv
 
