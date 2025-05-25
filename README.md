@@ -10,11 +10,11 @@ Built with Python, Playwright, and Streamlit, this tool simplifies manual compan
 You can find a local copy under assets/demo_video.mp4
 
 📦 Features
-✅ Auto-scrape website, industry, company size, HQ location
-🧠 AI-generated summary, customer profile, automation idea
-📂 CSV input → CSV output
-🧪 Command line + Streamlit web interface
-🔐 Environment variable support for API keys
+      ✅ Auto-scrape website, industry, company size, HQ location
+      🧠 AI-generated summary, customer profile, automation idea
+      📂 CSV input → CSV output
+      🧪 Command line + Streamlit web interface
+      🔐 Environment variable support for API keys
 
 🛠️ Tech Stack
 Python 3.9+
