@@ -7,6 +7,8 @@ import streamlit as st
 import pandas as pd
 import csv
 import io
+import time  # <-- import time for sleep
+
 from scraper3 import get_company_details
 from llm3 import analyze_company_website
 
@@ -24,10 +26,10 @@ def enrich_companies(df):
     total = len(df)
     for idx, row in df.iterrows():
         company = row['company_name']
-        # Update status and progress every 5 rows or last row
-        if idx % 5 == 0 or idx == total - 1:
-            status_text.write(f"🔍 Fetching & analyzing: **{company}** ({idx + 1}/{total})")
-            progress_bar.progress((idx + 1) / total)
+        # Update status and progress every row for smoothness
+        status_text.write(f"🔍 Fetching & analyzing: **{company}** ({idx + 1}/{total})")
+        progress_bar.progress((idx + 1) / total)
+        time.sleep(0.1)  # small sleep to allow UI to update smoothly
 
         # Check if key columns are missing or 'N/A', fetch details if so
         if (pd.isna(row['Website']) or row['Website'] == 'N/A' or
@@ -114,8 +116,8 @@ def dataframe_to_excel_download(df):
     return output.read()
 
 def main():
-    st.set_page_config(page_title="Company Enrichment Tool", layout="wide")
-    st.title("🏢 Company Info Enrichment Tool")
+    st.set_page_config(page_title="Lead Enrichment Tool", layout="wide")
+    st.title("🏢 Lead Enrichment Tool")
     st.write("Upload your CSV with a column named `company_name` to automatically enrich it with metadata and LLM analysis.")
 
     uploaded_file = st.file_uploader("📁 Upload CSV file", type=["csv"])
