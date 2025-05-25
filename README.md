@@ -7,7 +7,8 @@ This project enriches company data from a CSV file by automatically scraping key
 Built with Python, Playwright, and Streamlit, this tool simplifies manual company research into a one-click process.
 
 📸 Demo
-You can find a local copy under assets/demo_video.mp4
+link : https://drive.google.com/file/d/1ycxHSgyC2T_12KaC5MqGBDPHYxA6rh5U/view?usp=sharing
+You can also find a local copy under assets/demo.webm
 
 📦 Features
       ✅ Auto-scrape website, industry, company size, HQ location
