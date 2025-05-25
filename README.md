@@ -17,52 +17,49 @@ You can find a local copy under assets/demo_video.mp4
       🔐 Environment variable support for API keys
 
 🛠️ Tech Stack
-Python 3.9+
-Streamlit
-Pandas
-Playwright
-Google Generative AI (google-generativeai)
-Wikipedia API
-BeautifulSoup
-Requests
-dotenv
+      Python 3.9+
+      Streamlit
+      Pandas
+      Playwright
+      Google Generative AI (google-generativeai)
+      Wikipedia API
+      BeautifulSoup
+      Requests
+      dotenv
 
 📁 Folder Structure
-company-enrichment-tool/
-├── app.py # Main script ( Streamlit)
-├── main4.py #(CLI)
-├── scraper3.py # Company info scraper
-├── llm3.py # LLM (Gemini) prompt + parser
-├── sample_input.csv # Example input file
-├── enriched_output2.csv # Example output file
-├── requirements.txt # All dependencies
-├── .env.example # Template for API keys
-├── README.md # You're here!
-└── assets/
-      └── demo_video.mp4 #demo video
+      company-enrichment-tool/
+      ├── app.py # Main script ( Streamlit)
+      ├── main4.py #(CLI)
+      ├── scraper3.py # Company info scraper
+      ├── llm3.py # LLM (Gemini) prompt + parser
+      ├── sample_input.csv # Example input file
+      ├── enriched_output2.csv # Example output file
+      ├── requirements.txt # All dependencies
+      ├── .env.example # Template for API keys
+      ├── README.md # You're here!
+      └── assets/
+            └── demo_video.mp4 #demo video
 
 
 🚀 Setup Instructions
-1. Clone the Repo
-2. Install Dependencies
-      pip install -r requirements.txt
-3. Install Playwright Browsers
-      playwright install
-4. Create .env File
-      Create a .env file in the root directory based on .env.example:
+      1. Clone the Repo
+      2. Install Dependencies
+            pip install -r requirements.txt
+      3. Install Playwright Browsers
+            playwright install
+      4. Create .env File
+            Create a .env file in the root directory based on .env.example:
 
 
 ✅ How to Use
-🔁 Option 1: CLI Mode
-      python main4.py
-      #This reads sample_input.csv, scrapes details, enriches with AI, and writes to enriched_output2.csv.
-
-🌐 Option 2: Web UI (Streamlit)
-      streamlit run app.py
-      Upload a CSV with a column named company_name
-      Click Run Enrichment
-      Download enriched CSV
-
-📄 CSV Format
-✅ sample_input.csv
+      🔁 Option 1: CLI Mode
+            python main4.py #This reads sample_input.csv, scrapes details, enriches with AI, and writes to enriched_output2.csv.
+      🌐 Option 2: Web UI (Streamlit)
+            streamlit run app.py
+            Upload a CSV with a column named company_name
+            Click Run Enrichment
+            Download enriched CSV
+      📄 CSV Format
+      ✅ sample_input.csv
 
