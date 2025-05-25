@@ -7,10 +7,12 @@ import streamlit as st
 import pandas as pd
 import csv
 import io
-import time  # <-- import time for sleep
-
+import time
+from openpyxl.styles import Font, Alignment
 from scraper3 import get_company_details
 from llm3 import analyze_company_website
+
+SAMPLE_FILE_PATH = "sample_input.csv"  # <-- Make sure this file exists
 
 def enrich_companies(df):
     for col in ['Website', 'Industry', 'Company Size', 'HQ Location', 'Summary', 'Target Customer', 'AI Automation Idea']:
@@ -26,12 +28,10 @@ def enrich_companies(df):
     total = len(df)
     for idx, row in df.iterrows():
         company = row['company_name']
-        # Update status and progress every row for smoothness
         status_text.write(f"🔍 Fetching & analyzing: **{company}** ({idx + 1}/{total})")
         progress_bar.progress((idx + 1) / total)
-        time.sleep(0.1)  # small sleep to allow UI to update smoothly
+        time.sleep(0.1)
 
-        # Check if key columns are missing or 'N/A', fetch details if so
         if (pd.isna(row['Website']) or row['Website'] == 'N/A' or
             pd.isna(row['Industry']) or row['Industry'] == 'N/A' or
             pd.isna(row['Company Size']) or row['Company Size'] == 'N/A' or
@@ -79,21 +79,20 @@ def dataframe_to_csv_download(df):
 
     writer.writerow(df.columns)
     for _, row in df.iterrows():
-        cleaned_row = [str(cell).replace('\r', '') for cell in row]  # Retain newlines
+        cleaned_row = [str(cell).replace('\r', '') for cell in row]
         writer.writerow(cleaned_row)
 
     return output.getvalue().encode('utf-8')
 
 def dataframe_to_excel_download(df):
     output = io.BytesIO()
-
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Enriched Data')
 
         workbook = writer.book
         worksheet = writer.sheets['Enriched Data']
 
-        from openpyxl.styles import Font, Alignment
+        
         header_font = Font(bold=True)
         for cell in worksheet[1]:
             cell.font = header_font
@@ -118,29 +117,81 @@ def dataframe_to_excel_download(df):
 def main():
     st.set_page_config(page_title="Lead Enrichment Tool", layout="wide")
     st.title("🏢 Lead Enrichment Tool")
-    st.write("Upload your CSV with a column named `company_name` to automatically enrich it with metadata and LLM analysis.")
+    st.write("Upload your CSV or use a sample to enrich company data with metadata and LLM analysis.")
 
-    uploaded_file = st.file_uploader("📁 Upload CSV file", type=["csv"])
+    # ——— Enhanced Sidebar ———
+    st.sidebar.markdown("## 🛠️ Lead Enrichment Settings")
+    st.sidebar.markdown("---")
 
-    if uploaded_file:
-        try:
-            df = pd.read_csv(uploaded_file)
-        except Exception as e:
-            st.error(f"❌ Unable to read the CSV file: {e}")
-            return
+    with st.sidebar.expander("📥 Choose input method", expanded=True):
+        input_method = st.radio(
+            "",
+            ("Upload your own CSV", "Use sample input file"),
+            index=0,
+            key="input_method"
+        )
 
-        # Reset enrichment if new file uploaded
-        if 'last_uploaded' not in st.session_state or st.session_state.last_uploaded != uploaded_file.name:
-            st.session_state.enriched_df = None
-            st.session_state.last_uploaded = uploaded_file.name
+    if input_method == "Use sample input file":
+        with st.sidebar.expander("📄 Sample Input CSV", expanded=True):
+            try:
+                with open(SAMPLE_FILE_PATH, "rb") as f:
+                    sample_data = f.read()
+                st.download_button(
+                    label="📥 Download Sample Input CSV",
+                    data=sample_data,
+                    file_name="sample_input.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="download_sample"
+                )
 
-        st.write(f"✅ Loaded {len(df)} companies")
+            except Exception as e:
+                st.error(f"❌ Could not load sample input for download: {e}")
 
+    st.sidebar.markdown("---")
+    st.sidebar.markdown(
+        """
+        <div style='font-size:12px; color:gray;'>
+        ℹ️ Upload a CSV with a <code>company_name</code> column.<br>
+        ℹ️ After uploading or selecting sample, press the 🚀 Run Enrichment button.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    df = None
+
+    if input_method == "Upload your own CSV":
+        uploaded_file = st.file_uploader("📁 Upload CSV file", type=["csv"])
+        if uploaded_file:
+            try:
+                df = pd.read_csv(uploaded_file)
+                st.success(f"✅ Uploaded {len(df)} companies")
+            except Exception as e:
+                st.error(f"❌ Unable to read the CSV file: {e}")
+                return
+    else:
+        # Show a dropdown with just one sample file to select explicitly
+        sample_files = [SAMPLE_FILE_PATH]
+        selected_sample = st.selectbox("Select a sample input file:", sample_files)
+
+        if selected_sample:
+            try:
+                df = pd.read_csv(selected_sample)
+                st.success(f"✅ Loaded {len(df)} companies from sample input `{selected_sample}`")
+            except Exception as e:
+                st.error(f"❌ Could not load sample input: {e}")
+                return
+
+    if df is not None:
         if 'company_name' not in df.columns:
-            st.error("❌ Uploaded CSV must contain a column named `company_name`.")
+            st.error("❌ CSV must contain a column named `company_name`.")
             return
 
-        # Initialize session state variable
+        if 'last_uploaded' not in st.session_state or st.session_state.last_uploaded != input_method:
+            st.session_state.enriched_df = None
+            st.session_state.last_uploaded = input_method
+
         if 'enriched_df' not in st.session_state:
             st.session_state.enriched_df = None
 
@@ -149,16 +200,15 @@ def main():
                 with st.spinner("Processing... This may take a few minutes."):
                     try:
                         st.session_state.enriched_df = enrich_companies(df)
+                        st.success("✅ Enrichment complete!")
                     except Exception as e:
                         st.error(f"❌ An error occurred during enrichment: {e}")
                         return
-                    st.success("✅ Enrichment complete!")
         else:
-            st.info("✅ Enrichment already completed! You can download the results below or upload a new file to start again.")
+            st.info("✅ Enrichment already completed. Upload a new file or change source to re-run.")
 
-        # Show results and download buttons only if enriched data exists
         if st.session_state.enriched_df is not None:
-            st.subheader("Enrichment Results")
+            st.subheader("📊 Enrichment Results")
             st.dataframe(st.session_state.enriched_df)
 
             st.markdown("---")
