@@ -1,0 +1,10 @@
+streamlit
+pandas
+playwright
+wikipedia-api
+requests
+beautifulsoup4
+googlesearch-python
+google-generativeai
+python-dotenv
+
