@@ -7,7 +7,8 @@ This project enriches company data from a CSV file by automatically scraping key
 Built with Python, Playwright, and Streamlit, this tool simplifies manual company research into a one-click process.
 
 📸 Demo
-You can find a local copy under assets/demo_video.mp4
+link : https://drive.google.com/file/d/1ycxHSgyC2T_12KaC5MqGBDPHYxA6rh5U/view?usp=sharing
+You can also find a local copy under assets/demo.webm
 
 📦 Features
       ✅ Auto-scrape website, industry, company size, HQ location
@@ -38,8 +39,7 @@ You can find a local copy under assets/demo_video.mp4
       ├── requirements.txt # All dependencies
       ├── .env.example # Template for API keys
       ├── README.md # You're here!
-      └── assets/
-            └── demo_video.mp4 #demo video
+      └── demo_video.mp4 #demo video
 
 
 🚀 Setup Instructions
@@ -53,9 +53,7 @@ You can find a local copy under assets/demo_video.mp4
 
 
 ✅ How to Use
-      🔁 Option 1: CLI Mode
-            python main4.py #This reads sample_input.csv, scrapes details, enriches with AI, and writes to enriched_output2.csv.
-      🌐 Option 2: Web UI (Streamlit)
+      🌐 Web UI (Streamlit)
             streamlit run app.py
             Upload a CSV with a column named company_name
             Click Run Enrichment
