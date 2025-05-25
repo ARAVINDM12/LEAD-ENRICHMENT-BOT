@@ -4,9 +4,10 @@ import google.generativeai as genai
 import re
 import json
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
-
-# INSERT YOUR API KEY HERE
-GEMINI_API_KEY = "AIzaSyBK6lJFxB6ftsCnLc8gy7F31K3Z709r2NQ"
+import os
+from dotenv import load_dotenv
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
 
