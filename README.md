@@ -38,8 +38,7 @@ You can find a local copy under assets/demo_video.mp4
       ├── requirements.txt # All dependencies
       ├── .env.example # Template for API keys
       ├── README.md # You're here!
-      └── assets/
-            └── demo_video.mp4 #demo video
+      └── demo_video.mp4 #demo video
 
 
 🚀 Setup Instructions
@@ -53,9 +52,7 @@ You can find a local copy under assets/demo_video.mp4
 
 
 ✅ How to Use
-      🔁 Option 1: CLI Mode
-            python main4.py #This reads sample_input.csv, scrapes details, enriches with AI, and writes to enriched_output2.csv.
-      🌐 Option 2: Web UI (Streamlit)
+      🌐 Web UI (Streamlit)
             streamlit run app.py
             Upload a CSV with a column named company_name
             Click Run Enrichment
