@@ -53,7 +53,7 @@ def extract_visible_text_playwright(url):
         from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
+            context =  browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                            "(KHTML, like Gecko) Chrome/115.0 Safari/537.36",
                 java_script_enabled=True,
