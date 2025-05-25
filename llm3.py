@@ -3,36 +3,54 @@ from bs4 import BeautifulSoup
 import google.generativeai as genai
 import re
 import json
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import os
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+SCRAPINGBEE_API_KEY = os.getenv("SCRAPINGBEE_API_KEY")
+
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY is not set in environment variables.")
 genai.configure(api_key=GEMINI_API_KEY)
 
-
 def extract_visible_text_requests(url):
-    """Fetch page content using requests (fast, no JS rendering)."""
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, timeout=10, headers=headers)
-        response.raise_for_status()  # Raise for HTTP errors
+        response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         for script in soup(["script", "style"]):
             script.decompose()
-        return ' '.join(soup.stripped_strings)[:6000]  # Limit to ~6000 chars
+        return ' '.join(soup.stripped_strings)[:6000]
     except Exception as e:
-        print(f"⚠️ Failed to fetch content from {url} using requests: {e}")
+        print(f"⚠️ Requests failed for {url}: {e}")
         return ""
 
+def extract_visible_text_scrapingbee(url):
+    try:
+        print(f"🔁 Using ScrapingBee for {url}")
+        api_url = "https://app.scrapingbee.com/api/v1/"
+        params = {
+            "api_key": SCRAPINGBEE_API_KEY,
+            "url": url,
+            "render_js": "true"
+        }
+        response = requests.get(api_url, params=params, timeout=30)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        for script in soup(["script", "style"]):
+            script.decompose()
+        return ' '.join(soup.stripped_strings)[:6000]
+    except Exception as e:
+        print(f"⚠️ ScrapingBee failed for {url}: {e}")
+        return ""
 
 def extract_visible_text_playwright(url):
-    """Fetch page content using Playwright (renders JS, bypasses Cloudflare)."""
     try:
+        from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context(
@@ -43,38 +61,40 @@ def extract_visible_text_playwright(url):
             )
             page = context.new_page()
             page.goto(url, wait_until="load", timeout=60000)
-            print(f"Page loaded for {url}, waiting for JS rendering...")
-            page.wait_for_timeout(15000)  # wait 15 seconds for JS/Cloudflare
+            page.wait_for_timeout(15000)
             html = page.content()
             browser.close()
         soup = BeautifulSoup(html, "html.parser")
         for script in soup(["script", "style"]):
             script.decompose()
-        text = " ".join(soup.stripped_strings)
-        return text[:6000]
-    except PlaywrightTimeoutError:
-        print(f"⚠️ Timeout loading {url} with Playwright, trying to get partial content.")
-        return ""
+        return ' '.join(soup.stripped_strings)[:6000]
     except Exception as e:
-        print(f"⚠️ Error fetching page with Playwright: {e}")
+        print(f"⚠️ Playwright failed for {url}: {e}")
         return ""
-
 
 def extract_visible_text(url):
-    """Choose extraction method based on URL or content type."""
-    # Example: Use Playwright for sites that rely heavily on JS/Cloudflare
-    js_heavy_sites = ["openai.com", "example-js-site.com"]  # extend list as needed
-    if any(site in url.lower() for site in js_heavy_sites):
-        text = extract_visible_text_playwright(url)
-        if text:
-            return text
-        # fallback to requests if playwright fails
-        print("Fallback to requests extraction...")
-    return extract_visible_text_requests(url)
+    js_heavy_sites = ["openai.com", "example-js-site.com"]
+    parsed = urlparse(url)
+    hostname = parsed.netloc.lower()
 
+    # Use Playwright locally if installed and not on Streamlit Cloud
+    use_playwright = "streamlit.app" not in os.environ.get("STREAMLIT_SERVER_URL", "")
+
+    if any(site in hostname for site in js_heavy_sites):
+        if use_playwright:
+            text = extract_visible_text_playwright(url)
+            if text:
+                return text
+            print("🧭 Falling back to ScrapingBee...")
+        return extract_visible_text_scrapingbee(url)
+
+    # Fast path for simple sites
+    text = extract_visible_text_requests(url)
+    if not text and any(site in hostname for site in js_heavy_sites):
+        return extract_visible_text_scrapingbee(url)
+    return text
 
 def extract_json_from_text(text):
-    """Try to extract JSON object from a text blob."""
     json_match = re.search(r'\{.*?\}', text, re.DOTALL)
     if json_match:
         try:
@@ -82,7 +102,6 @@ def extract_json_from_text(text):
         except json.JSONDecodeError:
             pass
     return None
-
 
 def analyze_company_website(url, company_name):
     content = extract_visible_text(url)
@@ -110,19 +129,14 @@ Output JSON exactly like this example:
 """
         response = model.generate_content(prompt)
         result = response.text.strip()
-
-        try:
-            data = json.loads(result)
-        except json.JSONDecodeError:
-            data = extract_json_from_text(result)
-            if not data:
-                print("⚠️ Failed to parse JSON from model response, falling back to N/A")
-                return "N/A", "N/A", "N/A"
+        data = extract_json_from_text(result)
+        if not data:
+            print("⚠️ Failed to parse JSON from model response.")
+            return "N/A", "N/A", "N/A"
 
         summary = data.get("summary", "N/A")
         target_customer = data.get("target_customer", "N/A")
         ai_automation_idea = data.get("ai_automation_idea", "N/A")
-
         return summary, target_customer, ai_automation_idea
 
     except Exception as e:
