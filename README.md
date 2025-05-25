@@ -3,14 +3,17 @@ AI-powered automation tool that takes a list of company names and enriches it wi
 
 
 🤖 Company Info Enrichment Tool
-This project enriches company data from a CSV file by automatically scraping key metadata (like website, industry, HQ, size) and generating AI-based insights such as summaries, target customers, and automation ideas using Google Gemini.
-Built with Python, Playwright, and Streamlit, this tool simplifies manual company research into a one-click process.
 
-📸 Demo
-link : https://drive.google.com/file/d/1ycxHSgyC2T_12KaC5MqGBDPHYxA6rh5U/view?usp=sharing
-You can also find a local copy under assets/demo.webm
+      This project enriches company data from a CSV file by automatically scraping key metadata (like website, industry, HQ, size) and generating AI-based insights such as         summaries, target customers, and automation ideas using Google Gemini.
+      Built with Python, Playwright, and Streamlit, this tool simplifies manual company research into a one-click process.
+
+📸 DemO
+
+      link : https://drive.google.com/file/d/1ycxHSgyC2T_12KaC5MqGBDPHYxA6rh5U/view?usp=sharing
+      You can also find a local copy under assets/demo.webm
 
 📦 Features
+
       ✅ Auto-scrape website, industry, company size, HQ location
       🧠 AI-generated summary, customer profile, automation idea
       📂 CSV input → CSV output
@@ -18,6 +21,7 @@ You can also find a local copy under assets/demo.webm
       🔐 Environment variable support for API keys
 
 🛠️ Tech Stack
+
       Python 3.9+
       Streamlit
       Pandas
@@ -29,6 +33,7 @@ You can also find a local copy under assets/demo.webm
       dotenv
 
 📁 Folder Structure
+
       company-enrichment-tool/
       ├── app.py # Main script ( Streamlit)
       ├── main4.py #(CLI)
@@ -43,6 +48,7 @@ You can also find a local copy under assets/demo.webm
 
 
 🚀 Setup Instructions
+
       1. Clone the Repo
       2. Install Dependencies
             pip install -r requirements.txt
@@ -53,6 +59,7 @@ You can also find a local copy under assets/demo.webm
 
 
 ✅ How to Use
+
       🌐 Web UI (Streamlit)
             streamlit run app.py
             Upload a CSV with a column named company_name
